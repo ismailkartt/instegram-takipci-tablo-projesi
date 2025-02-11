@@ -42,34 +42,24 @@ const iconOptions = [
 ];
 
 function MultiCardPreview({ cards, onClose }: PreviewProps) {
-  const [currentPage, setCurrentPage] = useState(0);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
-  const currentCards = cards.slice(
-    currentPage * CARDS_PER_PAGE,
-    (currentPage + 1) * CARDS_PER_PAGE
-  );
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async () => {
     try {
-      const downloads = cards.map(async (card, index) => {
-        const element = cardRefs.current[index];
-        if (element) {
-          const dataUrl = await htmlToImage.toPng(element, {
-            quality: 1.0,
-            pixelRatio: 3,
-            backgroundColor: '#000'
-          });
-          
-          const link = document.createElement('a');
-          link.download = `kampanya-${card.id}.png`;
-          link.href = dataUrl;
-          link.click();
-        }
-      });
-
-      await Promise.all(downloads);
+      const container = containerRef.current;
+      if (container) {
+        // Tüm kartları tek bir görüntüde indir
+        const dataUrl = await htmlToImage.toPng(container, {
+          quality: 1.0,
+          pixelRatio: 3,
+          backgroundColor: '#000'
+        });
+        
+        const link = document.createElement('a');
+        link.download = 'kampanyalar.png';
+        link.href = dataUrl;
+        link.click();
+      }
     } catch (error) {
       console.error('Görsel indirme hatası:', error);
     }
@@ -89,92 +79,64 @@ function MultiCardPreview({ cards, onClose }: PreviewProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50">
-      <div className="relative w-full max-w-6xl">
-        <div className="absolute top-0 right-0 flex gap-2 mb-4 z-10">
-          <button
-            onClick={handleDownload}
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+    <div className="fixed inset-0 bg-black/90 overflow-y-auto z-50">
+      <div className="sticky top-2 flex justify-end gap-2 z-10 px-2">
+        <button
+          onClick={handleDownload}
+          className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+        >
+          <Download className="w-5 h-5" />
+        </button>
+        <button
+          onClick={onClose}
+          className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div 
+        ref={containerRef}
+        className="flex flex-col items-center gap-3 p-4 bg-black"
+      >
+        {cards.map((card, index) => (
+          <div
+            key={card.id}
+            className={`w-full max-w-[350px] rounded-3xl p-4 bg-gradient-to-r ${card.backgroundColor}`}
           >
-            <Download className="w-5 h-5" />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
-          {currentCards.map((card, index) => (
-            <div
-              key={card.id}
-              ref={el => cardRefs.current[index] = el}
-              className={`w-[400px] aspect-[4/5] rounded-3xl p-6 bg-gradient-to-r ${card.backgroundColor} mx-auto`}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-white/20 rounded-full">
-                  {getIcon(card.icon)}
-                </div>
-                <div>
-                  <h2 className="font-bold text-xl">{card.title}</h2>
-                  <p className="text-sm text-white/80">{card.description}</p>
-                </div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 bg-white/20 rounded-full">
+                {getIcon(card.icon)}
               </div>
-
-              <div className="flex items-baseline gap-2 mb-6">
-                <span className="text-3xl font-bold">{card.price.toLocaleString('tr-TR')} TL</span>
-                {card.originalPrice && (
-                  <span className="text-white/60 line-through">
-                    {card.originalPrice.toLocaleString('tr-TR')} TL
-                  </span>
-                )}
+              <div>
+                <h2 className="font-bold text-lg">{card.title}</h2>
+                <p className="text-sm text-white/80">{card.description}</p>
               </div>
+            </div>
 
-              <div className="space-y-3">
+            <div className="flex items-baseline gap-2 mb-4">
+              <span className="text-2xl font-bold">{card.price.toLocaleString('tr-TR')} TL</span>
+              {card.originalPrice && (
+                <span className="text-white/60 line-through text-sm">
+                  {card.originalPrice.toLocaleString('tr-TR')} TL
+                </span>
+              )}
+            </div>
+
+            {card.features.length > 0 && (
+              <div className="space-y-2">
                 {card.features.map((feature, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
                     </div>
                     <span className="text-sm">{feature}</span>
                   </div>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-8 gap-4">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-              disabled={currentPage === 0}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    currentPage === i ? 'bg-white' : 'bg-white/50'
-                  }`}
-                />
-              ))}
-            </div>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-              disabled={currentPage === totalPages - 1}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            )}
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
@@ -209,8 +171,8 @@ function CardEditor({ card, onClose, onSave, isNew = false }: EditorProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full">
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full mt-2">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold">{isNew ? "Yeni Kampanya" : "Kampanyayı Düzenle"}</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full">
