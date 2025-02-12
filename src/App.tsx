@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Gift, Clock, Users, TrendingUp, FileText, Heart, ChevronLeft, ChevronRight, Plus, X, Edit2, Download, Eye, Check } from 'lucide-react';
+import { Gift, Clock, Users, TrendingUp, FileText, Heart, ChevronLeft, ChevronRight, Plus, X, Edit2, Download, Eye, Check, Star, Diamond, Crown, Rocket, Bell, Flame, Medal, Sparkles, Trash2 } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 
 interface CampaignCard {
@@ -33,12 +33,28 @@ const colorOptions = [
   { label: "Mor", value: "from-purple-500 to-indigo-500" },
   { label: "Mavi", value: "from-blue-500 to-cyan-500" },
   { label: "Kırmızı", value: "from-red-500 to-pink-500" },
+  { label: "Altın", value: "from-amber-400 to-yellow-500" },
+  { label: "Okyanus", value: "from-cyan-500 to-blue-500" },
+  { label: "Gün Batımı", value: "from-orange-500 to-red-500" },
+  { label: "Orman", value: "from-green-500 to-emerald-500" },
+  { label: "Gece", value: "from-indigo-600 to-purple-600" },
+  { label: "Lavanta", value: "from-fuchsia-500 to-purple-500" },
+  { label: "Gökkuşağı", value: "from-rose-500 via-purple-500 to-cyan-500" }
 ];
 
 const iconOptions = [
   { label: "Hediye", value: "gift" },
   { label: "Trend", value: "trending-up" },
   { label: "Kalp", value: "heart" },
+  { label: "Yıldız", value: "star" },
+  { label: "Elmas", value: "diamond" },
+  { label: "Taç", value: "crown" },
+  { label: "Roket", value: "rocket" },
+  { label: "Zil", value: "bell" },
+  { label: "Ateş", value: "flame" },
+  { label: "Madalya", value: "medal" },
+  { label: "Parıltı", value: "sparkles" },
+  { label: "Saat", value: "clock" }
 ];
 
 function MultiCardPreview({ cards, onClose }: PreviewProps) {
@@ -73,6 +89,24 @@ function MultiCardPreview({ cards, onClose }: PreviewProps) {
         return <TrendingUp className="w-6 h-6" />;
       case 'heart':
         return <Heart className="w-6 h-6" />;
+      case 'star':
+        return <Star className="w-6 h-6" />;
+      case 'diamond':
+        return <Diamond className="w-6 h-6" />;
+      case 'crown':
+        return <Crown className="w-6 h-6" />;
+      case 'rocket':
+        return <Rocket className="w-6 h-6" />;
+      case 'bell':
+        return <Bell className="w-6 h-6" />;
+      case 'flame':
+        return <Flame className="w-6 h-6" />;
+      case 'medal':
+        return <Medal className="w-6 h-6" />;
+      case 'sparkles':
+        return <Sparkles className="w-6 h-6" />;
+      case 'clock':
+        return <Clock className="w-6 h-6" />;
       default:
         return <Gift className="w-6 h-6" />;
     }
@@ -206,8 +240,11 @@ function CardEditor({ card, onClose, onSave, isNew = false }: EditorProps) {
               <label className="block text-sm font-medium mb-1">Fiyat (TL)</label>
               <input
                 type="number"
-                value={editedCard.price}
-                onChange={(e) => setEditedCard({ ...editedCard, price: Number(e.target.value) })}
+                value={editedCard.price || ''}
+                onChange={(e) => setEditedCard({ 
+                  ...editedCard, 
+                  price: e.target.value === '' ? 0 : Number(e.target.value) 
+                })}
                 className="w-full bg-gray-700 rounded-lg p-2 text-white"
               />
             </div>
@@ -350,6 +387,24 @@ function App() {
         return <TrendingUp className="w-6 h-6" />;
       case 'heart':
         return <Heart className="w-6 h-6" />;
+      case 'star':
+        return <Star className="w-6 h-6" />;
+      case 'diamond':
+        return <Diamond className="w-6 h-6" />;
+      case 'crown':
+        return <Crown className="w-6 h-6" />;
+      case 'rocket':
+        return <Rocket className="w-6 h-6" />;
+      case 'bell':
+        return <Bell className="w-6 h-6" />;
+      case 'flame':
+        return <Flame className="w-6 h-6" />;
+      case 'medal':
+        return <Medal className="w-6 h-6" />;
+      case 'sparkles':
+        return <Sparkles className="w-6 h-6" />;
+      case 'clock':
+        return <Clock className="w-6 h-6" />;
       default:
         return <Gift className="w-6 h-6" />;
     }
@@ -384,39 +439,46 @@ function App() {
 
   const [previewCards, setPreviewCards] = useState<CampaignCard[]>([]);
 
+  const [deleteClickStates, setDeleteClickStates] = useState<{ [key: number]: number }>({});
+
+  const handleDeleteCard = (cardId: number) => {
+    const currentTime = Date.now();
+    const lastClickTime = deleteClickStates[cardId] || 0;
+    
+    if (currentTime - lastClickTime < 500) { // 500ms içinde ikinci tıklama
+      setCards(cards.filter(card => card.id !== cardId));
+      setSelectedCards(prev => {
+        const newSelection = new Set(prev);
+        newSelection.delete(cardId);
+        return newSelection;
+      });
+      // Silindikten sonra click state'i temizle
+      const newDeleteClickStates = { ...deleteClickStates };
+      delete newDeleteClickStates[cardId];
+      setDeleteClickStates(newDeleteClickStates);
+    } else {
+      // İlk tıklamayı kaydet
+      setDeleteClickStates({ ...deleteClickStates, [cardId]: currentTime });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-            disabled={currentPage === 0}
-            className="p-2 hover:bg-gray-800 rounded-full disabled:opacity-50"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-6 h-6 text-red-500" />
-              <h1 className="text-2xl font-bold">Özel Kampanyalar</h1>
-            </div>
-            {selectedCards.size > 0 && (
-              <button
-                onClick={handlePreview}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                <span>{selectedCards.size} Kartı Önizle</span>
-              </button>
-            )}
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center gap-2">
+            <Clock className="w-6 h-6 text-red-500" />
+            <h1 className="text-2xl font-bold">Avantajlı Paketler</h1>
           </div>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-            disabled={currentPage === totalPages - 1}
-            className="p-2 hover:bg-gray-800 rounded-full disabled:opacity-50"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
+          {selectedCards.size > 0 && (
+            <button
+              onClick={handlePreview}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors flex items-center gap-2 ml-4"
+            >
+              <Eye className="w-4 h-4" />
+              <span>{selectedCards.size} Kartı Önizle</span>
+            </button>
+          )}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -425,7 +487,7 @@ function App() {
               key={card.id}
               className={`rounded-3xl p-6 bg-gradient-to-r ${card.backgroundColor} transform hover:scale-105 transition-transform duration-200 relative group`}
             >
-              <div className="absolute top-4 right-4 flex gap-2">
+              <div className="absolute top-2 right-4 flex gap-2">
                 <button
                   onClick={() => toggleCardSelection(card.id)}
                   className={`p-2 rounded-full transition-colors ${
@@ -441,6 +503,14 @@ function App() {
                   className="p-2 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDeleteCard(card.id)}
+                  className={`p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${
+                    deleteClickStates[card.id] ? 'bg-red-500/50 hover:bg-red-500/60' : 'bg-red-500/20 hover:bg-red-500/30'
+                  }`}
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
               
